@@ -146,3 +146,7 @@ Desafios (não obrigatórios):
  * é possível construir a solução inteira sem utilizar nenhum if. Só não pode usar *break* e *continue*! Conceitos de orientação a objetos ajudam bastante! 
  * como garantir que 2 transações disparadas ao mesmo tempo não causem problemas relacionados à concorrência?
 Exemplo: dado que um cartão possua R$10.00 de saldo. Se fizermos 2 transações de R$10.00 ao mesmo tempo, em instâncias diferentes da aplicação, como o sistema deverá se comportar?
+
+Implementações adicionais:
+Utilizado BCrypt para geração de hash e validação de senhas.
+Exceptions customizadas

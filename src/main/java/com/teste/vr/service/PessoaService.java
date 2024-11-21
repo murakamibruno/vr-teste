@@ -1,7 +1,11 @@
 package com.teste.vr.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.teste.vr.dto.CartaoRespostaDto;
 import com.teste.vr.dto.TransacaoDto;
+import com.teste.vr.exception.CartaoInexistenteException;
+import com.teste.vr.exception.CartaoNotFoundException;
+import com.teste.vr.exception.TransacaoException;
 import com.teste.vr.model.Cartao;
 import com.teste.vr.repository.CartaoRepository;
 import com.teste.vr.utils.MyUtils;
@@ -24,11 +28,11 @@ public class PessoaService {
 
     private MyUtils myUtils;
 
-    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException {
+    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException, JsonProcessingException {
         Optional<Cartao> cartaoById = cartaoRepository.findById(cartao.getNumeroCartao());
         if (cartaoById.isPresent()) {
             log.error(String.format("Cartão com número %s já existente", cartao.getNumeroCartao()));
-            return new ResponseEntity<>(CartaoRespostaDto.transformaEmDTO(cartao), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new CartaoInexistenteException(CartaoRespostaDto.transformaEmDTO(cartao));
         }
         cartao.setSaldo(500);
         cartao.setSenha(myUtils.encodeSenha(cartao.getSenha()));
@@ -43,22 +47,22 @@ public class PessoaService {
             return new ResponseEntity<Float>(cartaoById.get().getSaldo(), HttpStatus.OK);
         }
         log.error(String.format("Cartão com número %s não encontrado", numeroCartao));
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        throw new CartaoNotFoundException();
     }
 
     public ResponseEntity<String> doTransacao (@RequestBody TransacaoDto transacaoDto) {
         Optional<Cartao> cartao = cartaoRepository.findById(transacaoDto.getNumeroCartao());
         if (cartao.isEmpty()) {
             log.error(String.format("Cartão com número %s não encontrado", transacaoDto.getNumeroCartao()));
-            return new ResponseEntity<>("CARTAO_INEXISTENTE", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new TransacaoException("CARTAO_INEXISTENTE");
         }
         if (!myUtils.checaSeSenhasMatches(transacaoDto.getSenha(),cartao.get().getSenha())) {
             log.error(String.format("Senha inválida para o cartão de número %s", transacaoDto.getNumeroCartao()));
-            return new ResponseEntity<>("SENHA_INVALIDA", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new TransacaoException("SENHA_INVALIDA");
         }
         if (transacaoDto.getValor() > cartao.get().getSaldo()) {
             log.error("Saldo insuficiente para a transação");
-            return new ResponseEntity<>("SALDO_INSUFICIENTE", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new TransacaoException("SALDO_INSUFICIENTE");
         }
         cartao.get().setSaldo(cartao.get().getSaldo() - transacaoDto.getValor());
         cartaoRepository.save(cartao.get());

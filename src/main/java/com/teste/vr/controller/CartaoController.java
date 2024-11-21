@@ -2,6 +2,7 @@ package com.teste.vr.controller;
 
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.teste.vr.dto.CartaoRespostaDto;
 import com.teste.vr.dto.TransacaoDto;
 import com.teste.vr.model.Cartao;
@@ -17,7 +18,7 @@ public class CartaoController {
     private final PessoaService pessoaService;
 
     @PostMapping("/cartoes")
-    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException {
+    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException, JsonProcessingException {
         return pessoaService.saveCartao(cartao);
     }
 
