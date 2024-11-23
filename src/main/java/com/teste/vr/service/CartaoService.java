@@ -54,7 +54,7 @@ public class CartaoService {
         throw new CartaoNotFoundException();
     }
 
-    public ResponseEntity<String> doTransacao (@RequestBody TransacaoDto transacaoDto) {
+    public synchronized ResponseEntity<String> doTransacao (@RequestBody TransacaoDto transacaoDto) {
         Optional<Cartao> cartao = cartaoRepository.findById(transacaoDto.getNumeroCartao());
         if (cartao.isEmpty()) {
             log.error(String.format("Cartão com número %s não encontrado", transacaoDto.getNumeroCartao()));

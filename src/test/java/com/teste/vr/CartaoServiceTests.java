@@ -23,6 +23,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import static org.junit.Assert.*;
 
 @SpringBootTest
@@ -148,6 +153,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Testa se cria cartão com sucesso ao utilizar usuário autenticado")
     public void testaAutenticacaoPostCartao() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/cartoes")
             .contentType(MediaType.APPLICATION_JSON)
@@ -157,6 +163,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Caso ocorra erro de autenticação ao salvar cartão, sistema irá lançar erro 401.")
     public void testaAutenticacaoErradaPostCartao() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/cartoes")
             .contentType(MediaType.APPLICATION_JSON)
@@ -166,6 +173,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Testa se busca saldo com sucesso ao utilizar usuário autenticado")
     public void testaAutenticacaoGetSaldo() throws Exception {
         cartaoService.saveCartao(cartaoDto);
         mockMvc.perform(MockMvcRequestBuilders.get("/cartoes/{id}", numeroCartao)
@@ -174,6 +182,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Caso ocorra erro de autenticação ao buscar saldo, sistema irá lançar erro 401.")
     public void testaAutenticacaoErradaSaldo() throws Exception {
         cartaoService.saveCartao(cartaoDto);
         mockMvc.perform(MockMvcRequestBuilders.get("/cartoes/{id}", numeroCartao)
@@ -182,6 +191,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Testa se transação ocorre com sucesso ao utilizar usuário autenticado")
     public void testaAutenticacaoPostTransacao() throws Exception {
         cartaoService.saveCartao(cartaoDto);
         TransacaoDto transacaoDto = new TransacaoDto(numeroCartao, senhaCartao, valor);
@@ -193,6 +203,7 @@ public class CartaoServiceTests {
     }
 
     @Test
+    @DisplayName("Caso ocorra erro de autenticação na transação, sistema irá lançar erro 401.")
     public void testaAutenticacaoErradaPostTransacao() throws Exception {
         cartaoService.saveCartao(cartaoDto);
         TransacaoDto transacaoDto = new TransacaoDto(numeroCartao, senhaCartao, valor);
@@ -201,5 +212,22 @@ public class CartaoServiceTests {
             .content(new ObjectMapper().writeValueAsString(transacaoDto))
             .with(SecurityMockMvcRequestPostProcessors.httpBasic("username1","password1"))
         ).andExpect(MockMvcResultMatchers.status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Testa se recurso ficará lockado com transações simultâneas")
+    public void testaTransacaoThreadsSimultaneasSucesso() throws JsonProcessingException, InterruptedException, BrokenBarrierException, TimeoutException {
+        cartaoService.saveCartao(cartaoDto);
+        TransacaoDto transacaoDto = new TransacaoDto(numeroCartao, senhaCartao, 10);
+        CyclicBarrier barrier = new CyclicBarrier(3);
+
+        WorkerWithCyclicBarrier worker1 = new WorkerWithCyclicBarrier("Worker with barrier 1", barrier, transacaoDto, cartaoService);
+        WorkerWithCyclicBarrier worker2 = new WorkerWithCyclicBarrier("Worker with barrier 2", barrier, transacaoDto, cartaoService);
+
+        worker1.start();
+        worker2.start();
+        barrier.await(5, TimeUnit.SECONDS);
+
+        assertEquals(480, cartaoService.getCartao(numeroCartao).getBody().floatValue(), 0);
     }
 }
