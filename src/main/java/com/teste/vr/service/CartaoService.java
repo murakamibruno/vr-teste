@@ -1,9 +1,9 @@
 package com.teste.vr.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.teste.vr.dto.CartaoRespostaDto;
+import com.teste.vr.dto.CartaoDto;
 import com.teste.vr.dto.TransacaoDto;
-import com.teste.vr.exception.CartaoInexistenteException;
+import com.teste.vr.exception.CartaoJaExistenteException;
 import com.teste.vr.exception.CartaoNotFoundException;
 import com.teste.vr.exception.TransacaoException;
 import com.teste.vr.model.Cartao;
@@ -11,6 +11,7 @@ import com.teste.vr.repository.CartaoRepository;
 import com.teste.vr.utils.MyUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,23 +23,26 @@ import java.util.Optional;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class PessoaService {
+public class CartaoService {
 
-    private final CartaoRepository cartaoRepository;
+    @Autowired
+    private CartaoRepository cartaoRepository;
 
+    @Autowired
     private MyUtils myUtils;
 
-    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException, JsonProcessingException {
-        Optional<Cartao> cartaoById = cartaoRepository.findById(cartao.getNumeroCartao());
+    private static final float SALDO_INICIAL = 500;
+
+    public ResponseEntity<CartaoDto> saveCartao (@RequestBody CartaoDto cartaoDto) throws RuntimeException, JsonProcessingException {
+        Optional<Cartao> cartaoById = cartaoRepository.findById(cartaoDto.getNumeroCartao());
         if (cartaoById.isPresent()) {
-            log.error(String.format("Cartão com número %s já existente", cartao.getNumeroCartao()));
-            throw new CartaoInexistenteException(CartaoRespostaDto.transformaEmDTO(cartao));
+            log.error(String.format("Cartão com número %s já existente", cartaoDto.getNumeroCartao()));
+            throw new CartaoJaExistenteException(cartaoDto);
         }
-        cartao.setSaldo(500);
-        cartao.setSenha(myUtils.encodeSenha(cartao.getSenha()));
+        Cartao cartao = new Cartao(cartaoDto.getNumeroCartao(), myUtils.encodeSenha(cartaoDto.getSenha()), SALDO_INICIAL);
         Cartao cartaoCreated = cartaoRepository.save(cartao);
         log.info(String.format("Cartão de número %s criado com sucesso", cartao.getNumeroCartao()));
-        return new ResponseEntity<>(CartaoRespostaDto.transformaEmDTO(cartaoCreated), HttpStatus.CREATED);
+        return new ResponseEntity<>(CartaoDto.transformaEmDTO(cartaoCreated), HttpStatus.CREATED);
     }
 
     public ResponseEntity<Float> getCartao (@PathVariable(value = "id") String numeroCartao) {
@@ -68,6 +72,4 @@ public class PessoaService {
         cartaoRepository.save(cartao.get());
         return new ResponseEntity<>("OK", HttpStatus.CREATED);
     }
-
-
 }

@@ -148,5 +148,5 @@ Desafios (não obrigatórios):
 Exemplo: dado que um cartão possua R$10.00 de saldo. Se fizermos 2 transações de R$10.00 ao mesmo tempo, em instâncias diferentes da aplicação, como o sistema deverá se comportar?
 
 Implementações adicionais:
-Utilizado BCrypt para geração de hash e validação de senhas.
-Exceptions customizadas
+* Utilizado BCrypt para geração de hash e validação de senhas.
+* Exceptions customizadas

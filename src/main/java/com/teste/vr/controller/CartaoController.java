@@ -3,10 +3,10 @@ package com.teste.vr.controller;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.teste.vr.dto.CartaoRespostaDto;
+import com.teste.vr.dto.CartaoDto;
 import com.teste.vr.dto.TransacaoDto;
 import com.teste.vr.model.Cartao;
-import com.teste.vr.service.PessoaService;
+import com.teste.vr.service.CartaoService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,21 +15,21 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class CartaoController {
 
-    private final PessoaService pessoaService;
+    private final CartaoService cartaoService;
 
     @PostMapping("/cartoes")
-    public ResponseEntity<CartaoRespostaDto> saveCartao (@RequestBody Cartao cartao) throws RuntimeException, JsonProcessingException {
-        return pessoaService.saveCartao(cartao);
+    public ResponseEntity<CartaoDto> saveCartao (@RequestBody CartaoDto cartaoDto) throws RuntimeException, JsonProcessingException {
+        return cartaoService.saveCartao(cartaoDto);
     }
 
     @PostMapping("/transacoes")
     public ResponseEntity<String> doTransacao (@RequestBody TransacaoDto transacaoDto) {
-        return pessoaService.doTransacao(transacaoDto);
+        return cartaoService.doTransacao(transacaoDto);
     }
 
     @GetMapping("/cartoes/{id}")
     public ResponseEntity<Float> getCartao (@PathVariable(value = "id") String numeroCartao) throws RuntimeException {
-        return pessoaService.getCartao(numeroCartao);
+        return cartaoService.getCartao(numeroCartao);
     }
 
 }

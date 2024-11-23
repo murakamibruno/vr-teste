@@ -21,7 +21,6 @@ public class SecurityConfig {
             User.withDefaultPasswordEncoder()
                 .username("username")
                 .password("password")
-                .roles("ADMIN")
                 .build();
 
         return new InMemoryUserDetailsManager(user);
@@ -31,7 +30,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/cartoes/**").hasAnyRole("ADMIN").anyRequest().authenticated())
+                .requestMatchers("/cartoes/**").authenticated()
+                .requestMatchers("/transacoes").authenticated())
             .httpBasic(Customizer.withDefaults());
 
         return http.build();
